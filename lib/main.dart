@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:velocity_x/velocity_x.dart';
+import 'package:flutter_todo_app/dashboard.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'loginPage.dart';
-import 'applogo.dart';
-import 'Registration.dart';
 
-void main() {
-  runApp(MyApp());
+
+
+void main() async {
+   WidgetsFlutterBinding.ensureInitialized();
+   SharedPreferences prefs = await SharedPreferences.getInstance();
+  runApp(MyApp(token: prefs.getString('token'),));
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+
+  final token;
+  const MyApp({
+    @required this.token,
+    Key? key,
+}): super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,7 +30,9 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.black,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: SignInPage(),
+      home: (token != null && JwtDecoder.isExpired(token) == false )?Dashboard(token: token):SignInPage()
     );
   }
 }
+
+

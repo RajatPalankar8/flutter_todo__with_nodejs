@@ -1,8 +1,12 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'applogo.dart';
 import 'loginPage.dart';
+import 'package:http/http.dart' as http;
+import 'config.dart';
 
 class Registration extends StatefulWidget {
   @override
@@ -14,6 +18,35 @@ class _RegistrationState extends State<Registration> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   bool _isNotValidate = false;
+
+  void registerUser() async{
+    if(emailController.text.isNotEmpty && passwordController.text.isNotEmpty){
+
+      var regBody = {
+        "email":emailController.text,
+        "password":passwordController.text
+      };
+
+      var response = await http.post(Uri.parse(registration),
+      headers: {"Content-Type":"application/json"},
+      body: jsonEncode(regBody)
+      );
+
+      var jsonResponse = jsonDecode(response.body);
+
+      print(jsonResponse['status']);
+
+      if(jsonResponse['status']){
+        Navigator.push(context, MaterialPageRoute(builder: (context)=>SignInPage()));
+      }else{
+        print("SomeThing Went Wrong");
+      }
+    }else{
+      setState(() {
+        _isNotValidate = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +88,17 @@ class _RegistrationState extends State<Registration> {
                     controller: passwordController,
                     keyboardType: TextInputType.text,
                     decoration: InputDecoration(
+                        suffixIcon: IconButton(icon: Icon(Icons.copy),onPressed: (){
+                          final data = ClipboardData(text: passwordController.text);
+                          Clipboard.setData(data);
+                        },),
+                        prefixIcon: IconButton(icon: Icon(Icons.password),onPressed: (){
+                          String passGen =  generatePassword();
+                          passwordController.text = passGen;
+                          setState(() {
+
+                          });
+                        },),
                         filled: true,
                         fillColor: Colors.white,
                         errorStyle: TextStyle(color: Colors.white),
@@ -66,6 +110,7 @@ class _RegistrationState extends State<Registration> {
                   HStack([
                     GestureDetector(
                       onTap: ()=>{
+                        registerUser()
                       },
                         child: VxBox(child: "Register".text.white.makeCentered().p16()).green600.roundedLg.make().px16().py16(),
                     ),
@@ -88,4 +133,27 @@ class _RegistrationState extends State<Registration> {
       ),
     );
   }
+}
+
+String generatePassword() {
+  String upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  String lower = 'abcdefghijklmnopqrstuvwxyz';
+  String numbers = '1234567890';
+  String symbols = '!@#\$%^&*()<>,./';
+
+  String password = '';
+
+  int passLength = 20;
+
+  String seed = upper + lower + numbers + symbols;
+
+  List<String> list = seed.split('').toList();
+
+  Random rand = Random();
+
+  for (int i = 0; i < passLength; i++) {
+    int index = rand.nextInt(list.length);
+    password += list[index];
+  }
+  return password;
 }
